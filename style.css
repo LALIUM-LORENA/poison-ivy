@@ -8,6 +8,8 @@ body {
 }
 
 .logo {
+    filter: invert(1); /* Inverts colors: teal becomes white, white becomes teal */
+}
     display: block;
     max-width: 200px; /* Adjusted for your logo size */
     margin: 0 auto 20px;
