@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Workout Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h2>Log Your Workout</h2>
+  <p>Tell us what you did today—we’ll give you tips!</p>
+  <form id="workoutForm" onsubmit="analyzeWorkout(event)">
+    <label for="date">Date:</label>
+    <input type="date" id="date" name="date" required>
+
+    <label for="exercise">Exercise:</label>
+    <select id="exercise" name="exercise" required>
+      <option value="">Select an exercise</option>
+      <option value="push-ups">Push-Ups</option>
+      <option value="squats">Squats</option>
+      <option value="plank">Plank</option>
+    </select>
+
+    <label for="reps">Reps (or seconds for plank):</label>
+    <input type="number" id="reps" name="reps" min="1" required>
+
+    <label for="sets">Sets:</label>
+    <input type="number" id="sets" name="sets" min="1" required>
+
+    <label for="effort">How did it feel?</label>
+    <select id="effort" name="effort" required>
+      <option value="">Select effort level</option>
+      <option value="easy">Easy</option>
+      <option value="medium">Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+
+    <label for="sleep">Hours slept last night (optional):</label>
+    <input type="number" id="sleep" name="sleep" min="0" max="24">
+
+    <label for="glucose">Blood Glucose (mg/dL, optional):</label>
+    <input type="number" id="glucose" name="glucose" min="0" step="1">
+
+    <label for="cholesterol">Total Cholesterol (mg/dL, optional):</label>
+    <input type="number" id="cholesterol" name="cholesterol" min="0" step="1">
+
+    <label for="vitaminD">Vitamin D (ng/mL, optional):</label>
+    <input type="number" id="vitaminD" name="vitaminD" min="0" step="1">
+
+    <label for="iron">Iron - Ferritin (ng/mL, optional):</label>
+    <input type="number" id="iron" name="iron" min="0" step="1">
+
+    <label for="testosterone">Testosterone (ng/dL, optional):</label>
+    <input type="number" id="testosterone" name="testosterone" min="0" step="1">
+
+    <label for="crp">C-Reactive Protein (mg/L, optional):</label>
+    <input type="number" id="crp" name="crp" min="0" step="0.1">
+    </br></br>
+    <button class="btn" type="submit">Get Feedback</button>
+  </form>
+
+  <!-- Modal Overlay -->
+  <div id="modalOverlay" class="modal-overlay"></div>
+
+  <!-- Modal -->
+  <div id="modalPrimary" class="modal-primary">
+    <span id="closeModal" class="close-modal">&times;</span>
+    <div id="modalFeedback"></div>
+  </div>
+
+  <script src="script-03.js"></script>
+</body>
+</html>
