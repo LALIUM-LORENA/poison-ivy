@@ -1,79 +1,182 @@
-let workoutHistory = [];
+// In-memory history loaded from localStorage (or starts empty)
+let workoutHistory = JSON.parse(localStorage.getItem('workoutHistory')) || [];
 
-function analyzeWorkout(event) {
-    event.preventDefault();
-
-    const exercise = document.getElementById("exercise").value;
-    const reps = parseInt(document.getElementById("reps").value);
-    const sets = parseInt(document.getElementById("sets").value);
-    const effort = document.getElementById("effort").value;
-    const sleep = parseInt(document.getElementById("sleep").value) || null;
-    const date = document.getElementById("date").value;
-    const glucose = parseInt(document.getElementById("glucose").value) || null;
-    const cholesterol = parseInt(document.getElementById("cholesterol").value) || null;
-    const vitaminD = parseInt(document.getElementById("vitaminD").value) || null;
-    const iron = parseInt(document.getElementById("iron").value) || null;
-    const testosterone = parseInt(document.getElementById("testosterone").value) || null;
-    const crp = parseFloat(document.getElementById("crp").value) || null;
-
-    const workout = { date, exercise, reps, sets, effort, sleep, glucose, cholesterol, vitaminD, iron, testosterone, crp };
-    workoutHistory.push(workout);
-
-    let feedback = `<strong>${exercise} - ${date}</strong><br>`;
-    feedback += `You did ${sets} sets of ${reps} reps—great work! `;
-
-    if (exercise === "push-ups" || exercise === "squats") {
-        if (effort === "easy" && reps >= 10) feedback += `Since it’s easy, try ${reps + 2} reps. `;
-        else if (effort === "hard" && reps > 8) feedback += `Tough one—stick to ${reps} or drop to ${reps - 2}. Our fitness consultants can perfect your form! `;
-        else feedback += `Solid pace—keep at ${reps} reps. `;
-    } else if (exercise === "plank") {
-        if (effort === "easy" && reps >= 30) feedback += `Great hold! Try ${reps + 10} seconds. `;
-        else if (effort === "hard" && reps > 20) feedback += `Strong effort—hold ${reps - 5} seconds if tough. A Method to Great trainer can help! `;
-        else feedback += `Keep at ${reps} seconds. `;
-    }
-
-    if (glucose !== null) {
-        if (glucose > 100) feedback += `<br><strong>Glucose (${glucose} mg/dL):</strong> High—cut carbs today. Our nutrition meal plans can balance this—learn more at Method to Great! `;
-        else if (glucose < 70) feedback += `<br><strong>Glucose (${glucose} mg/dL):</strong> Low—eat a carb (e.g., fruit). Try our Power Glucose supplement! `;
-        else feedback += `<br><strong>Glucose (${glucose} mg/dL):</strong> Perfect—keep it up! `;
-    }
-
-    if (cholesterol !== null) {
-        if (cholesterol > 200) feedback += `<br><strong>Cholesterol (${cholesterol} mg/dL):</strong> High—add cardio. Our Power Omega-3 supports heart health—check it out! `;
-        else if (cholesterol < 150) feedback += `<br><strong>Cholesterol (${cholesterol} mg/dL):</strong> Low—add healthy fats. A nutrition plan can optimize this! `;
-        else feedback += `<br><strong>Cholesterol (${cholesterol} mg/dL):</strong> Solid—nice job! `;
-    }
-
-    if (vitaminD !== null) {
-        if (vitaminD < 30) feedback += `<br><strong>Vitamin D (${vitaminD} ng/mL):</strong> Low—get sunlight. Our Power Vitamin D3 can boost you—available now! `;
-        else if (vitaminD > 100) feedback += `<br><strong>Vitamin D (${vitaminD} ng/mL):</strong> High—ease supplements. A consultant can adjust this! `;
-        else feedback += `<br><strong>Vitamin D (${vitaminD} ng/mL):</strong> Optimal—strong foundation! `;
-    }
-
-    if (iron !== null) {
-        if (iron < 30) feedback += `<br><strong>Iron (${iron} ng/mL):</strong> Low—eat spinach. Our Power Iron supplement can help—see Method to Great! `;
-        else if (iron > 150) feedback += `<br><strong>Iron (${iron} ng/mL):</strong> High—watch intake. A nutritionist can guide you! `;
-        else feedback += `<br><strong>Iron (${iron} ng/mL):</strong> Good—energy’s set! `;
-    }
-
-    if (testosterone !== null) {
-        if (testosterone < 300) feedback += `<br><strong>Testosterone (${testosterone} ng/dL):</strong> Low—lift heavy. Our Power Test Boost can assist—check it out! `;
-        else if (testosterone > 1000) feedback += `<br><strong>Testosterone (${testosterone} ng/dL):</strong> High—great for gains. A pro can confirm this! `;
-        else feedback += `<br><strong>Testosterone (${testosterone} ng/dL):</strong> Solid—muscle-ready! `;
-    }
-
-    if (crp !== null) {
-        if (crp > 3) feedback += `<br><strong>CRP (${crp} mg/L):</strong> High—inflammation’s up. Ease off, add berries. Our Power Anti-Inflame supplement can support you! `;
-        else feedback += `<br><strong>CRP (${crp} mg/L):</strong> Normal—keep steady! `;
-    }
-
-    if (sleep !== null && sleep < 6) feedback += `<br><strong>Sleep (${sleep} hrs):</strong> Low—aim for 7+. A nutritionist can suggest calming options! `;
-
-    feedback += `<br><small><em>Ranges are estimates. Consult a pro for precision. Elevate your journey with Method to Great’s meal plans, fitness consultancy, and power supplements—visit us soon!</em></small>`;
-
-    document.getElementById("feedback").innerHTML = feedback;
+/**
+ * Utility: Parse an input value as a number using the provided parser.
+ * If the input is an empty string, returns null.
+ */
+function parseInputValue(id, parseFn = parseInt) {
+  const value = document.getElementById(id).value;
+  return value === "" ? null : parseFn(value);
 }
 
-document.getElementById("workoutForm").addEventListener("submit", function() {
-    setTimeout(() => document.getElementById("workoutForm").reset(), 1000);
+/**
+ * Helper Functions for Health Metric Feedback
+ */
+function getGlucoseFeedback(glucose) {
+  if (glucose > 100) return "<span>A bit high—try a low-carb snack post-workout (e.g., nuts).</span>";
+  if (glucose < 70) return "<span>Low—eat a small carb (e.g., fruit) before exercising.</span>";
+  return "<span>Perfect range—keep it steady!</span>";
+}
+
+function getCholesterolFeedback(cholesterol) {
+  if (cholesterol > 200) return "<span>Above ideal—add cardio tomorrow and oats to breakfast.</span>";
+  if (cholesterol < 150) return "<span>Low end—healthy fats (e.g., avocado) can help.</span>";
+  return "<span>Solid levels—great job!</span>";
+}
+
+function getVitaminDFeedback(vitaminD) {
+  if (vitaminD < 30) return "<span>Low—get 10 mins sunlight or add fish. May slow recovery.</span>";
+  if (vitaminD > 100) return "<span>High—ease up on supplements if taking them.</span>";
+  return "<span>Optimal—supports strong workouts!</span>";
+}
+
+function getIronFeedback(iron) {
+  if (iron < 30) return "<span>Low—add red meat or spinach; fatigue might hit otherwise. Stick to moderate reps.</span>";
+  if (iron > 150) return "<span>High—watch intake, consult your doc if unsure.</span>";
+  return "<span>Good range—plenty of energy for lifts!</span>";
+}
+
+function getTestosteroneFeedback(testosterone) {
+  if (testosterone < 300) return "<span>Low—focus on compound lifts (e.g., squats) and zinc-rich foods.</span>";
+  if (testosterone > 1000) return "<span>High—great for gains, but check with your doc if unexpected.</span>";
+  return "<span>Solid—perfect for muscle-building!</span>";
+}
+
+function getCRPFeedback(crp) {
+  if (crp > 3) return "<span>Elevated—inflammation’s up. Ease up on intensity, add anti-inflammatory foods (e.g., berries).</span>";
+  if (crp < 1) return "<span>Low—minimal inflammation, full speed ahead!</span>";
+  return "<span>Normal—keep your routine steady.</span>";
+}
+
+function getSleepFeedback(sleep) {
+  return sleep < 6 ? "<span>Low—aim for 7+ to boost energy." : "Perfect for recovery!</span>";
+}
+
+/**
+ * Generates a feedback string based on the workout object.
+ */
+function generateFeedback(workout) {
+  let feedback = `<div class="feedback-heading">${workout.exercise} - ${workout.date}</div>
+                  <div class="feedback-result">You did ${workout.sets} sets of ${workout.reps} reps—nice effort!</div> `;
+
+  // Exercise-specific feedback
+  if (workout.exercise === "push-ups" || workout.exercise === "squats") {
+    if (workout.effort === "easy" && workout.reps >= 10) {
+      feedback += `<div class="feedback-info">Since it felt easy, try ${workout.reps + 2} reps or add a set.</div>`;
+    } else if (workout.effort === "hard" && workout.reps > 8) {
+      feedback += `<div class="feedback-info">It was tough—stick to ${workout.reps} or drop to ${workout.reps - 2}.</div>`;
+    } else {
+      feedback += `<div class="feedback-info">Good pace—keep at ${workout.reps} reps.</div>`;
+    }
+  } else if (workout.exercise === "plank") {
+    if (workout.effort === "easy" && workout.reps >= 30) {
+      feedback += `<div class="feedback-info">Great hold! Try ${workout.reps + 10} seconds next time.</div>`;
+    } else if (workout.effort === "hard" && workout.reps > 20) {
+      feedback += `<div class="feedback-info">Solid effort—hold ${workout.reps - 5} seconds if too tough.</div>`;
+    } else {
+      feedback += `<div class="feedback-info">Keep at ${workout.reps} seconds to build endurance.</div>`;
+    }
+  }
+
+  // Blood test and health metrics feedback
+  if (workout.glucose !== null) {
+    feedback += `<div class="result-row"><span class="result-heading">Glucose (${workout.glucose} mg/dL):</span> ${getGlucoseFeedback(workout.glucose)}</div>`;
+  }
+  if (workout.cholesterol !== null) {
+    feedback += `<div class="result-row"><span class="result-heading">Cholesterol (${workout.cholesterol} mg/dL):</span> ${getCholesterolFeedback(workout.cholesterol)}</div>`;
+  }
+  if (workout.vitaminD !== null) {
+    feedback += `<div class="result-row"><span class="result-heading">Vitamin D (${workout.vitaminD} ng/mL):</span> ${getVitaminDFeedback(workout.vitaminD)}</div>`;
+  }
+  if (workout.iron !== null) {
+    feedback += `<div class="result-row"><span class="result-heading">Iron (${workout.iron} ng/mL):</span> ${getIronFeedback(workout.iron)}</div>`;
+  }
+  if (workout.testosterone !== null) {
+    feedback += `<div class="result-row"><span class="result-heading">Testosterone (${workout.testosterone} ng/dL):</span> ${getTestosteroneFeedback(workout.testosterone)}</div>`;
+  }
+  if (workout.crp !== null) {
+    feedback += `<div class="result-row"><span class="result-heading">CRP (${workout.crp} mg/L):</span> ${getCRPFeedback(workout.crp)}</div>`;
+  }
+  if (workout.sleep !== null) {
+    feedback += `<div class="result-row"><span class="result-heading">Sleep (${workout.sleep} hrs):</span> ${getSleepFeedback(workout.sleep)}</div>`;
+  }
+
+  // Progress check: find the most recent previous workout for the same exercise
+  const previousWorkout = [...workoutHistory]
+    .reverse()
+    .find(w => w.exercise === workout.exercise && w.date < workout.date);
+  if (previousWorkout) {
+    if (previousWorkout.reps < workout.reps || previousWorkout.sets < workout.sets) {
+      feedback += `<div><span>Progress:</span> Improvement from ${previousWorkout.reps} reps and ${previousWorkout.sets} sets—awesome!</div>`;
+    }
+  }
+
+  return feedback;
+}
+
+/**
+ * Opens the modal with the given feedback.
+ */
+function openModal(feedback) {
+  const modalOverlay = document.getElementById("modalOverlay");
+  const modal = document.getElementById("modalPrimary");
+  const modalFeedback = document.getElementById("modalFeedback");
+
+  modalFeedback.innerHTML = feedback;
+  modalOverlay.classList.add("active");
+  modal.classList.add("active");
+}
+
+/**
+ * Closes the modal.
+ */
+function closeModal() {
+  const modalOverlay = document.getElementById("modalOverlay");
+  const modal = document.getElementById("modalPrimary");
+
+  modalOverlay.classList.remove("active");
+  modal.classList.remove("active");
+}
+
+/**
+ * Main event handler for workout form submission.
+ */
+function analyzeWorkout(event) {
+  event.preventDefault();
+
+  // Build the workout object using our parseInputValue utility
+  const workout = {
+    date: document.getElementById("date").value,
+    exercise: document.getElementById("exercise").value,
+    reps: parseInputValue("reps", parseInt),
+    sets: parseInputValue("sets", parseInt),
+    effort: document.getElementById("effort").value,
+    sleep: parseInputValue("sleep", parseInt),
+    glucose: parseInputValue("glucose", parseInt),
+    cholesterol: parseInputValue("cholesterol", parseInt),
+    vitaminD: parseInputValue("vitaminD", parseInt),
+    iron: parseInputValue("iron", parseInt),
+    testosterone: parseInputValue("testosterone", parseInt),
+    crp: parseInputValue("crp", parseFloat)
+  };
+
+  // Store the workout and persist to localStorage
+  workoutHistory.push(workout);
+  localStorage.setItem("workoutHistory", JSON.stringify(workoutHistory));
+
+  // Generate feedback and open modal
+  const feedback = generateFeedback(workout);
+  openModal(feedback);
+
+  // Reset the form after a short delay
+  setTimeout(() => document.getElementById("workoutForm").reset(), 1000);
+}
+
+// Close modal on click of "x" or overlay
+document.getElementById("closeModal").addEventListener("click", closeModal);
+document.getElementById("modalOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "modalOverlay") {
+    closeModal();
+  }
 });
